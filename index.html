@@ -3,740 +3,835 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SVG → CSS | Convert SVG files to clean CSS backgrounds</title>
-  <meta name="description" content="Upload any SVG and instantly get clean, optimized CSS background-image code. Supports URL-encoded, Base64, and mask-image variants. Free, client-side, no upload." />
+  <title>SVG → CSS — Convert SVG to CSS background code</title>
+  <meta name="description" content="Upload any SVG and instantly get clean, optimized CSS background-image code. URL-encoded, Base64, mask-image, and inline img variants. 100% client-side." />
   <meta property="og:title" content="SVG → CSS Converter" />
-  <meta property="og:description" content="Turn any SVG into clean CSS background-image code instantly." />
+  <meta property="og:description" content="Turn any SVG into production-ready CSS. Instant, client-side, free." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <style>
-    /* ─── Reset & Tokens ─────────────────────────────────────────────── */
+    /* ═══════════════════════════════════════════════════════════
+       Design: Brutalist Editorial
+       Palette: warm paper · ink black · signal red
+       Type: Syne (display) · DM Sans (body) · JetBrains Mono (code)
+    ═══════════════════════════════════════════════════════════ */
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:          #0c0d14;
-      --surface:     #13141f;
-      --surface-2:   #1a1c2e;
-      --surface-3:   #21233a;
-      --border:      rgba(139, 92, 246, 0.18);
-      --border-2:    rgba(139, 92, 246, 0.35);
-      --primary:     #8b5cf6;
-      --primary-2:   #a78bfa;
-      --primary-glow:rgba(139, 92, 246, 0.25);
-      --accent:      #06b6d4;
-      --accent-2:    #22d3ee;
-      --success:     #10b981;
-      --warning:     #f59e0b;
-      --error:       #ef4444;
-      --text:        #e2e8f0;
-      --text-2:      #94a3b8;
-      --text-3:      #64748b;
-      --code-bg:     #0a0b12;
-      --radius:      12px;
-      --radius-lg:   18px;
-      --shadow:      0 4px 24px rgba(0,0,0,0.4);
-      --shadow-lg:   0 8px 48px rgba(0,0,0,0.6);
-      --transition:  0.22s cubic-bezier(0.4,0,0.2,1);
+      --paper:        #E6E3DA;
+      --paper-2:      #F0EDE5;
+      --white:        #F8F6F1;
+      --ink:          #111111;
+      --ink-2:        #3A3A3A;
+      --ink-3:        #808080;
+      --ink-4:        #C4C2BA;
+      --red:          #C8321A;
+      --red-hover:    #E03A20;
+      --red-pale:     #F8EAE7;
+      --green:        #1A5C36;
+      --border:       1.5px solid #111111;
+      --border-light: 1px solid #C4C2BA;
+      --shadow:       3px 3px 0 0 #111111;
+      --shadow-lg:    5px 5px 0 0 #111111;
+      --code-bg:      #111111;
+      --code-text:    #E6E3DA;
+      --t:            0.16s ease;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
       line-height: 1.6;
-      overflow-x: hidden;
     }
 
-    /* ─── Background grid ────────────────────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(139,92,246,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139,92,246,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* ── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--paper); }
+    ::-webkit-scrollbar-thumb { background: var(--ink-4); }
 
-    body::after {
-      content: '';
-      position: fixed;
-      top: -30%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 600px;
-      background: radial-gradient(ellipse, rgba(139,92,246,0.12) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* ─── Layout ─────────────────────────────────────────────────────── */
-    .page {
-      position: relative;
-      z-index: 1;
-      max-width: 1280px;
+    /* ── Utility ───────────────────────────────────────────── */
+    .wrap {
+      max-width: 1240px;
       margin: 0 auto;
-      padding: 0 24px 80px;
+      padding: 0 32px;
     }
 
-    /* ─── Header ─────────────────────────────────────────────────────── */
-    header {
-      text-align: center;
-      padding: 52px 0 44px;
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
     }
 
-    .logo-badge {
+    /* ══════════════════════════════════════════════════════════
+       NAV
+    ══════════════════════════════════════════════════════════ */
+    nav {
+      border-bottom: var(--border);
+      background: var(--paper);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 54px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    @media (max-width: 600px) { .nav-inner { padding: 0 16px; } }
+
+    .nav-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-brand .arr { color: var(--red); }
+
+    .kofi-nav {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-2);
-      border-radius: 100px;
-      padding: 6px 16px 6px 8px;
-      font-size: 12px;
+      gap: 7px;
+      background: var(--ink);
+      color: var(--paper);
+      text-decoration: none;
+      border: var(--border);
+      padding: 7px 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
       font-weight: 600;
-      color: var(--primary-2);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 24px;
-    }
-
-    .logo-badge span.dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 8px var(--primary);
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.8); }
-    }
-
-    h1 {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, #fff 0%, var(--primary-2) 50%, var(--accent-2) 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .subtitle {
-      font-size: 1.05rem;
-      color: var(--text-2);
-      max-width: 520px;
-      margin: 0 auto 12px;
-    }
-
-    .badges {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 20px;
-    }
-
-    .badge {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 4px 12px;
-      font-size: 12px;
-      color: var(--text-3);
-      font-weight: 500;
-    }
-
-    .badge .icon { margin-right: 4px; }
-
-    /* ─── Main grid ──────────────────────────────────────────────────── */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-
-    @media (max-width: 860px) {
-      .main-grid { grid-template-columns: 1fr; }
-    }
-
-    /* ─── Card ───────────────────────────────────────────────────────── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
+      letter-spacing: 0.01em;
       box-shadow: var(--shadow);
-      transition: border-color var(--transition), box-shadow var(--transition);
+      transition: background var(--t), border-color var(--t),
+                  transform var(--t), box-shadow var(--t);
     }
 
-    .card:hover { border-color: var(--border-2); }
+    .kofi-nav:hover {
+      background: var(--red);
+      border-color: var(--red);
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 0 #111;
+    }
 
-    .card-header {
+    .kofi-nav:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 0 #111;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       HERO
+    ══════════════════════════════════════════════════════════ */
+    .hero {
+      padding: 68px 0 56px;
+      border-bottom: var(--border);
+    }
+
+    .hero-eyebrow {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 16px 20px;
-      background: var(--surface-2);
-      border-bottom: 1px solid var(--border);
+      gap: 14px;
+      margin-bottom: 28px;
     }
 
-    .card-header .card-icon {
-      width: 32px; height: 32px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
+    .eyebrow-index {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--red);
+    }
+
+    .eyebrow-rule {
+      width: 60px;
+      height: 1.5px;
+      background: var(--ink-4);
       flex-shrink: 0;
     }
 
-    .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
-    .card-subtitle { font-size: 12px; color: var(--text-3); }
+    .eyebrow-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
 
-    /* ─── Drop Zone ──────────────────────────────────────────────────── */
+    .eyebrow-tag {
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      border: 1px solid var(--ink-4);
+      padding: 3px 9px;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(3.2rem, 7.5vw, 6.5rem);
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+      color: var(--ink);
+      margin-bottom: 32px;
+    }
+
+    h1 .red { color: var(--red); }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--ink-2);
+      max-width: 460px;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    .hero-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .feature-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.73rem;
+      font-weight: 500;
+      color: var(--ink-2);
+      background: var(--white);
+      border: 1px solid var(--ink-4);
+      padding: 5px 12px;
+      transition: border-color var(--t);
+    }
+
+    .feature-chip:hover { border-color: var(--ink-3); }
+
+    .feature-chip .dot {
+      width: 5px; height: 5px;
+      background: var(--red);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       SECTION DIVIDER
+    ══════════════════════════════════════════════════════════ */
+    .sec-div {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 30px 0 26px;
+    }
+
+    .sec-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--red);
+      white-space: nowrap;
+    }
+
+    .sec-line {
+      height: 1.5px;
+      background: var(--ink-4);
+      flex: 1;
+    }
+
+    .sec-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       TOOL GRID
+    ══════════════════════════════════════════════════════════ */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 22px;
+      align-items: start;
+      padding-bottom: 80px;
+    }
+
+    @media (max-width: 920px) {
+      .tool-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       PANEL (generic bordered box)
+    ══════════════════════════════════════════════════════════ */
+    .panel {
+      background: var(--white);
+      border: var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .panel + .panel { margin-top: 18px; }
+
+    .panel-hd {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: var(--border);
+      background: var(--ink);
+    }
+
+    .panel-hd-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--paper);
+    }
+
+    .panel-hd-sub {
+      font-size: 0.67rem;
+      color: #777;
+      letter-spacing: 0.04em;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       DROP ZONE
+    ══════════════════════════════════════════════════════════ */
     #drop-zone {
-      padding: 40px 24px;
+      padding: 44px 24px;
       text-align: center;
       cursor: pointer;
-      transition: background var(--transition), border-color var(--transition);
+      border: 2px dashed var(--ink-4);
+      margin: 14px;
+      transition: border-color var(--t), background var(--t);
       position: relative;
     }
 
+    #drop-zone:hover { border-color: var(--ink); }
+
     #drop-zone.drag-over {
-      background: rgba(139, 92, 246, 0.08);
+      border-color: var(--red);
+      background: var(--red-pale);
     }
 
     .drop-icon {
-      width: 64px; height: 64px;
-      margin: 0 auto 20px;
-      background: var(--surface-2);
-      border: 2px dashed var(--border-2);
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
-      transition: border-color var(--transition), transform var(--transition);
+      display: block;
+      font-size: 2.6rem;
+      margin-bottom: 14px;
+      transition: transform var(--t);
     }
 
-    #drop-zone.drag-over .drop-icon,
-    #drop-zone:hover .drop-icon {
-      border-color: var(--primary);
-      transform: scale(1.05);
-    }
+    #drop-zone:hover .drop-icon,
+    #drop-zone.drag-over .drop-icon { transform: scale(1.08); }
 
     .drop-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 6px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 5px;
     }
 
-    .drop-subtitle {
-      font-size: 13px;
-      color: var(--text-3);
-      margin-bottom: 20px;
+    .drop-sub {
+      font-size: 0.8rem;
+      color: var(--ink-3);
+      margin-bottom: 22px;
     }
 
     .btn-upload {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, var(--primary), #6d28d9);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
+      background: var(--ink);
+      color: var(--paper);
+      border: var(--border);
       padding: 10px 20px;
-      font-size: 13px;
+      font-size: 0.8rem;
       font-weight: 600;
-      font-family: inherit;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.02em;
       cursor: pointer;
-      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
-      box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+      box-shadow: var(--shadow);
+      transition: background var(--t), border-color var(--t),
+                  transform var(--t), box-shadow var(--t);
     }
 
     .btn-upload:hover {
-      opacity: 0.92;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(139,92,246,0.45);
+      background: var(--red);
+      border-color: var(--red);
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 0 #111;
     }
 
-    .btn-upload:active { transform: translateY(0); }
+    .btn-upload:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 0 #111;
+    }
 
     #file-input { display: none; }
 
-    /* ─── SVG Preview ────────────────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════
+       SVG PREVIEW AREA
+    ══════════════════════════════════════════════════════════ */
     #svg-preview-area {
       display: none;
-      padding: 20px 24px 24px;
-      border-top: 1px solid var(--border);
+      padding: 14px 16px 16px;
+      border-top: var(--border);
     }
 
     .preview-label {
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-3);
+      color: var(--ink-3);
       margin-bottom: 10px;
     }
 
     .svg-container {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       flex-wrap: wrap;
       align-items: flex-start;
     }
 
     .svg-render-box {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
+      background: var(--ink);
+      border: var(--border);
+      padding: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 100px;
-      min-height: 100px;
+      min-width: 76px;
+      min-height: 76px;
     }
 
-    #svg-render-box-light {
-      background: #f8fafc;
-      border-color: var(--border);
-    }
+    #svg-render-box-light { background: #FFFFFF; }
 
     .render-caption {
-      font-size: 10px;
-      color: var(--text-3);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-3);
       text-align: center;
-      margin-top: 6px;
+      margin-top: 4px;
     }
 
-    #svg-preview { max-width: 90px; max-height: 90px; }
+    #svg-preview,
+    #svg-preview-light { max-width: 68px; max-height: 68px; }
 
-    .svg-meta {
-      flex: 1;
-      min-width: 180px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .svg-meta { flex: 1; min-width: 150px; }
 
     .meta-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 12px;
+      align-items: baseline;
+      padding: 5px 0;
+      border-bottom: var(--border-light);
     }
 
+    .meta-row:last-child { border-bottom: none; }
+
     .meta-key {
-      font-size: 11px;
-      color: var(--text-3);
-      font-weight: 500;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ink-3);
     }
 
     .meta-val {
-      font-size: 12px;
-      color: var(--text);
+      font-size: 0.73rem;
       font-weight: 600;
       font-family: 'JetBrains Mono', monospace;
+      color: var(--ink);
+      text-align: right;
+      word-break: break-all;
+      max-width: 130px;
     }
 
-    .meta-val.good { color: var(--success); }
-    .meta-val.warn { color: var(--warning); }
+    .meta-val.good { color: var(--green); }
+    .meta-val.warn { color: var(--red); }
 
-    /* ─── Options ────────────────────────────────────────────────────── */
-    #options-area {
-      display: none;
-      padding: 0 24px 24px;
-    }
-
-    .options-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    @media (max-width: 560px) {
-      .options-grid { grid-template-columns: 1fr; }
-    }
+    /* ══════════════════════════════════════════════════════════
+       OPTIONS PANEL
+    ══════════════════════════════════════════════════════════ */
+    .options-grid { display: flex; flex-direction: column; }
 
     .option-toggle {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
+      gap: 12px;
+      padding: 11px 16px;
+      border-bottom: var(--border-light);
       cursor: pointer;
-      transition: border-color var(--transition), background var(--transition);
+      transition: background var(--t);
       user-select: none;
     }
 
-    .option-toggle:hover { border-color: var(--border-2); }
+    .option-toggle:last-child { border-bottom: none; }
+    .option-toggle:hover { background: var(--paper); }
 
     .option-toggle input[type="checkbox"] { display: none; }
 
     .toggle-track {
-      width: 34px; height: 18px;
-      background: var(--surface-3);
-      border-radius: 100px;
+      width: 30px;
+      height: 15px;
+      background: var(--ink-4);
+      border: 1px solid var(--ink-3);
       position: relative;
       flex-shrink: 0;
-      transition: background var(--transition);
-      border: 1px solid var(--border-2);
+      transition: background var(--t), border-color var(--t);
     }
 
     .toggle-thumb {
       position: absolute;
-      top: 2px; left: 2px;
-      width: 12px; height: 12px;
-      background: var(--text-3);
-      border-radius: 50%;
-      transition: transform var(--transition), background var(--transition);
+      top: 2px;
+      left: 2px;
+      width: 9px;
+      height: 9px;
+      background: var(--white);
+      transition: transform var(--t);
     }
 
-    .option-toggle input:checked ~ .toggle-track { background: var(--primary); border-color: var(--primary); }
+    .option-toggle input:checked ~ .toggle-track {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
     .option-toggle input:checked ~ .toggle-track .toggle-thumb {
-      transform: translateX(16px);
-      background: #fff;
+      transform: translateX(15px);
+      background: var(--red);
     }
 
     .option-info { flex: 1; }
-    .option-name { font-size: 13px; font-weight: 500; color: var(--text); }
-    .option-desc { font-size: 11px; color: var(--text-3); }
+    .option-name { font-size: 0.82rem; font-weight: 500; color: var(--ink); }
+    .option-desc { font-size: 0.7rem; color: var(--ink-3); }
 
-    /* ─── Output section ─────────────────────────────────────────────── */
+    /* ══════════════════════════════════════════════════════════
+       OUTPUT COLUMN
+    ══════════════════════════════════════════════════════════ */
     .output-col {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
+    /* ── Output card (created by JS) ─────────────────────── */
     .output-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
+      background: var(--white);
+      border: var(--border);
       box-shadow: var(--shadow);
-      transition: border-color var(--transition);
     }
-
-    .output-card:hover { border-color: var(--border-2); }
 
     .output-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
-      background: var(--surface-2);
-      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--ink);
+      border-bottom: var(--border);
     }
 
     .output-label {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .output-type-badge {
-      font-size: 11px;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
-      padding: 3px 10px;
-      border-radius: 100px;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
+      padding: 3px 8px;
     }
 
-    .badge-url    { background: rgba(139,92,246,0.18); color: var(--primary-2); }
-    .badge-b64    { background: rgba(6,182,212,0.18);  color: var(--accent-2); }
-    .badge-mask   { background: rgba(16,185,129,0.18); color: #34d399; }
-    .badge-img    { background: rgba(245,158,11,0.18); color: #fbbf24; }
+    /* Badge colour fills on dark header */
+    .badge-url  { background: var(--red);    color: #fff; }
+    .badge-b64  { background: #1D4ED8;       color: #fff; }
+    .badge-mask { background: #166534;       color: #fff; }
+    .badge-img  { background: #7C3AED;       color: #fff; }
 
     .output-meta-badge {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-3);
+      font-size: 0.67rem;
+      color: #777;
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .btn-copy {
       display: flex;
       align-items: center;
-      gap: 6px;
-      background: var(--surface-3);
-      border: 1px solid var(--border-2);
-      color: var(--text-2);
-      border-radius: 7px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      font-family: inherit;
+      gap: 5px;
+      background: transparent;
+      border: 1px solid #444;
+      color: #999;
+      padding: 5px 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: all var(--transition);
       white-space: nowrap;
+      transition: background var(--t), border-color var(--t), color var(--t);
     }
 
     .btn-copy:hover {
-      background: var(--primary);
-      border-color: var(--primary);
+      background: var(--red);
+      border-color: var(--red);
       color: #fff;
     }
 
     .btn-copy.copied {
-      background: var(--success) !important;
-      border-color: var(--success) !important;
+      background: var(--green) !important;
+      border-color: var(--green) !important;
       color: #fff !important;
     }
 
-    .code-block {
-      padding: 16px;
-      overflow-x: auto;
-      position: relative;
-    }
+    .code-block { overflow-x: auto; }
 
     .code-block pre {
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 12.5px;
-      line-height: 1.7;
-      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      line-height: 1.8;
+      color: var(--code-text);
+      background: var(--code-bg);
+      padding: 16px 18px;
       white-space: pre-wrap;
       word-break: break-all;
-      background: var(--code-bg);
-      border-radius: 8px;
-      padding: 14px 16px;
     }
 
-    /* Syntax highlight colors */
-    .tok-prop  { color: #93c5fd; }    /* CSS property */
-    .tok-colon { color: var(--text-3); }
-    .tok-url   { color: #c4b5fd; }    /* url() */
-    .tok-quot  { color: #86efac; }    /* string quotes */
-    .tok-data  { color: #fca5a5; }    /* data:image... */
-    .tok-svg   { color: #fcd34d; }    /* svg content */
-    .tok-semi  { color: var(--text-3); }
-    .tok-size  { color: #6ee7b7; }
+    /* ── Syntax colours (on dark code bg) ───────────────── */
+    .tok-prop  { color: #93C5FD; }
+    .tok-colon { color: #4B5563; }
+    .tok-url   { color: #C4B5FD; }
+    .tok-quot  { color: #86EFAC; }
+    .tok-data  { color: #FCA5A5; }
+    .tok-semi  { color: #4B5563; }
+    .tok-size  { color: #6EE7B7; }
 
-    /* ─── Placeholder card ───────────────────────────────────────────── */
+    /* ── Placeholder ─────────────────────────────────────── */
     .placeholder-state {
-      padding: 48px 24px;
+      padding: 60px 24px;
       text-align: center;
     }
 
     .placeholder-icon {
-      font-size: 48px;
+      font-size: 2.8rem;
       margin-bottom: 16px;
-      opacity: 0.3;
+      display: block;
+      opacity: 0.18;
     }
 
     .placeholder-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text-3);
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink-3);
       margin-bottom: 6px;
     }
 
     .placeholder-sub {
-      font-size: 13px;
-      color: var(--text-3);
-      opacity: 0.7;
+      font-size: 0.8rem;
+      color: var(--ink-3);
     }
 
-    /* ─── Size warning ───────────────────────────────────────────────── */
-    .size-warning {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      background: rgba(245,158,11,0.08);
-      border: 1px solid rgba(245,158,11,0.25);
-      border-radius: 10px;
-      padding: 12px 14px;
-      font-size: 12px;
-      color: #fbbf24;
-      line-height: 1.5;
-      margin: 0 24px 20px;
-      display: none;
-    }
-
-    .size-warning.visible { display: flex; }
-
-    /* ─── Background preview ─────────────────────────────────────────── */
-    #bg-preview-card { display: none; }
-
+    /* ── BG preview swatches (created by JS) ─────────────── */
     .bg-preview-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      padding: 16px;
     }
 
     .bg-swatch {
-      border-radius: 10px;
-      height: 80px;
-      border: 1px solid var(--border);
+      height: 90px;
       position: relative;
       overflow: hidden;
+      border-right: var(--border-light);
     }
+
+    .bg-swatch:last-child { border-right: none; }
 
     .bg-swatch-label {
       position: absolute;
-      bottom: 4px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 9px;
+      bottom: 6px;
+      left: 6px;
+      font-size: 0.58rem;
       font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      background: rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.6);
       color: #fff;
-      padding: 2px 7px;
-      border-radius: 100px;
-      white-space: nowrap;
+      padding: 2px 6px;
     }
 
-    /* ─── Ko-fi button ───────────────────────────────────────────────── */
-    .kofi-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: linear-gradient(135deg, #ff5e5b, #ff9966);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 100px;
-      padding: 9px 18px;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: 'Inter', sans-serif;
-      letter-spacing: 0.01em;
-      box-shadow: 0 4px 18px rgba(255,94,91,0.35);
-      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
-      white-space: nowrap;
-    }
-
-    .kofi-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 28px rgba(255,94,91,0.5);
-      opacity: 0.95;
-    }
-
-    .kofi-btn:active { transform: translateY(0); }
-
-    .kofi-btn svg { flex-shrink: 0; }
-
-    .header-actions {
-      display: flex;
-      justify-content: center;
-      margin-top: 28px;
-    }
-
-    /* ─── Footer ─────────────────────────────────────────────────────── */
-    footer {
-      text-align: center;
-      padding: 40px 0 0;
-      font-size: 12px;
-      color: var(--text-3);
-    }
-
-    footer a { color: var(--primary-2); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-    footer .kofi-footer { color: #ff9966; }
-
-    /* ─── Animations ─────────────────────────────────────────────────── */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
+    /* ── Animate in ──────────────────────────────────────── */
     .animate-in {
-      animation: fadeInUp 0.4s cubic-bezier(0.4,0,0.2,1) both;
+      animation: stamp 0.22s cubic-bezier(0.2,0,0.4,1) both;
     }
 
-    /* ─── Scrollbar ──────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--border-2); }
+    @keyframes stamp {
+      from { opacity: 0; transform: scale(0.97) translateY(6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════════════════════════ */
+    footer {
+      border-top: var(--border);
+      padding: 22px 0;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    @media (max-width: 600px) { .footer-inner { padding: 0 16px; } }
+
+    .footer-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.88rem;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .footer-note {
+      font-size: 0.75rem;
+      color: var(--ink-3);
+    }
+
+    .footer-kofi {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--red);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color var(--t);
+    }
+
+    .footer-kofi:hover { border-color: var(--red); }
   </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- ── Header ─────────────────────────────────────────────── -->
-  <header>
-    <div class="logo-badge"><span class="dot"></span> SVG → CSS Converter</div>
-    <h1>Turn SVG into<br>clean CSS backgrounds</h1>
-    <p class="subtitle">Upload any SVG file and instantly get optimized CSS code — URL-encoded, Base64, and mask variants included.</p>
-    <div class="badges">
-      <span class="badge"><span class="icon">🔒</span>100% client-side</span>
-      <span class="badge"><span class="icon">⚡</span>Instant conversion</span>
-      <span class="badge"><span class="icon">🎨</span>Live preview</span>
-      <span class="badge"><span class="icon">📋</span>One-click copy</span>
+<!-- ══ NAV ════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-brand">SVG<span class="arr">→</span>CSS</a>
+    <a href="https://ko-fi.com/exomethu" target="_blank" rel="noopener noreferrer" class="kofi-nav" id="kofi-header-btn">
+      ☕&ensp;Support on Ko-fi
+    </a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ══ HERO ═══════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-index">01 — Tool</span>
+      <div class="eyebrow-rule"></div>
+      <div class="eyebrow-tags">
+        <span class="eyebrow-tag">Client-side</span>
+        <span class="eyebrow-tag">No upload</span>
+        <span class="eyebrow-tag">Free</span>
+      </div>
     </div>
-    <div class="header-actions">
-      <a href="https://ko-fi.com/exomethu" target="_blank" rel="noopener noreferrer" class="kofi-btn" id="kofi-header-btn">
-        <!-- Ko-fi cup icon -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M18 6h-1V4H7v2H6a3 3 0 0 0 0 6h.5A6.5 6.5 0 0 0 13 17.9V20h-2v2h6v-2h-2v-2.1A6.5 6.5 0 0 0 17.5 12H18a3 3 0 0 0 0-6zm0 4h-1v-2h1a1 1 0 0 1 0 2z"/>
-        </svg>
-        Support on Ko-fi
-      </a>
+
+    <h1>Convert SVG<br>into <span class="red">CSS.</span></h1>
+
+    <p class="hero-desc">Upload any SVG. Get clean, production-ready CSS
+    background-image code — URL-encoded, Base64, mask-image, and inline
+    HTML variants.</p>
+
+    <div class="hero-features">
+      <span class="feature-chip"><span class="dot"></span>URL-encoded</span>
+      <span class="feature-chip"><span class="dot"></span>Base64</span>
+      <span class="feature-chip"><span class="dot"></span>mask-image</span>
+      <span class="feature-chip"><span class="dot"></span>Inline &lt;img&gt;</span>
+      <span class="feature-chip"><span class="dot"></span>Live preview</span>
+      <span class="feature-chip"><span class="dot"></span>One-click copy</span>
     </div>
-  </header>
+  </section>
 
-  <!-- ── Main ───────────────────────────────────────────────── -->
-  <div class="main-grid">
+  <!-- ══ SECTION DIVIDER ════════════════════════════════════════ -->
+  <div class="sec-div">
+    <span class="sec-num">02</span>
+    <div class="sec-line"></div>
+    <span class="sec-label">Drop your SVG &amp; convert</span>
+    <div class="sec-line" style="max-width:32px;"></div>
+  </div>
 
-    <!-- ── Left: Input + Options ──────────────────────────── -->
+  <!-- ══ TOOL GRID ══════════════════════════════════════════════ -->
+  <div class="tool-grid">
+
+    <!-- ── LEFT: upload + options ────────────────────────── -->
     <div>
-      <div class="card" id="upload-card">
-        <div class="card-header">
-          <div class="card-icon">📂</div>
-          <div>
-            <div class="card-title">SVG Source</div>
-            <div class="card-subtitle">Drag, drop, or browse</div>
-          </div>
+
+      <!-- Upload panel -->
+      <div class="panel" id="upload-card">
+        <div class="panel-hd">
+          <span class="panel-hd-label">SVG Source</span>
+          <span class="panel-hd-sub">drag · drop · paste</span>
         </div>
 
-        <!-- Drop Zone -->
         <div id="drop-zone" role="button" tabindex="0" aria-label="Upload SVG file">
-          <div class="drop-icon" id="drop-icon">🖼️</div>
+          <span class="drop-icon" id="drop-icon">🖼</span>
           <div class="drop-title">Drop your SVG here</div>
-          <div class="drop-subtitle">or click to browse — SVG files only</div>
+          <div class="drop-sub">or click to browse — SVG files only</div>
           <button class="btn-upload" id="btn-browse" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
             Choose file
           </button>
           <input type="file" id="file-input" accept=".svg,image/svg+xml" />
         </div>
 
-        <!-- SVG Meta Preview -->
+        <!-- SVG preview + meta (shown after upload) -->
         <div id="svg-preview-area">
-          <div class="preview-label">SVG preview</div>
+          <div class="preview-label">Preview</div>
           <div class="svg-container">
             <div>
               <div class="svg-render-box" id="svg-render-box-dark">
-                <img id="svg-preview" alt="SVG preview on dark" />
+                <img id="svg-preview" alt="SVG on dark" />
               </div>
               <div class="render-caption">Dark</div>
             </div>
             <div>
               <div class="svg-render-box" id="svg-render-box-light">
-                <img id="svg-preview-light" alt="SVG preview on light" />
+                <img id="svg-preview-light" alt="SVG on light" />
               </div>
               <div class="render-caption">Light</div>
             </div>
@@ -745,81 +840,82 @@
         </div>
       </div>
 
-      <!-- Options -->
-      <div class="card" id="options-card" style="margin-top:18px; display:none;">
-        <div class="card-header">
-          <div class="card-icon">⚙️</div>
-          <div>
-            <div class="card-title">Conversion Options</div>
-            <div class="card-subtitle">Customize the output</div>
-          </div>
+      <!-- Options panel (shown after upload) -->
+      <div class="panel" id="options-card" style="display:none;">
+        <div class="panel-hd">
+          <span class="panel-hd-label">Options</span>
         </div>
-        <div id="options-area" style="display:block; padding: 16px 20px 20px;">
-          <div class="options-grid">
-            <label class="option-toggle">
-              <input type="checkbox" id="opt-minify" checked />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <div class="option-info">
-                <div class="option-name">Minify SVG</div>
-                <div class="option-desc">Strip comments & whitespace</div>
-              </div>
-            </label>
-            <label class="option-toggle">
-              <input type="checkbox" id="opt-remove-attrs" checked />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <div class="option-info">
-                <div class="option-name">Clean attributes</div>
-                <div class="option-desc">Remove xml:space, version</div>
-              </div>
-            </label>
-            <label class="option-toggle">
-              <input type="checkbox" id="opt-bg-size" checked />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <div class="option-info">
-                <div class="option-name">Include bg-size</div>
-                <div class="option-desc">Add background-size: cover</div>
-              </div>
-            </label>
-            <label class="option-toggle">
-              <input type="checkbox" id="opt-no-repeat" checked />
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <div class="option-info">
-                <div class="option-name">No-repeat</div>
-                <div class="option-desc">background-repeat: no-repeat</div>
-              </div>
-            </label>
-          </div>
+        <div class="options-grid">
+          <label class="option-toggle">
+            <input type="checkbox" id="opt-minify" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <div class="option-info">
+              <div class="option-name">Minify SVG</div>
+              <div class="option-desc">Strip comments &amp; whitespace</div>
+            </div>
+          </label>
+          <label class="option-toggle">
+            <input type="checkbox" id="opt-remove-attrs" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <div class="option-info">
+              <div class="option-name">Clean attributes</div>
+              <div class="option-desc">Remove xml:space, version</div>
+            </div>
+          </label>
+          <label class="option-toggle">
+            <input type="checkbox" id="opt-bg-size" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <div class="option-info">
+              <div class="option-name">Include background-size</div>
+              <div class="option-desc">Adds background-size: cover</div>
+            </div>
+          </label>
+          <label class="option-toggle">
+            <input type="checkbox" id="opt-no-repeat" checked />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <div class="option-info">
+              <div class="option-name">No-repeat</div>
+              <div class="option-desc">Adds background-repeat: no-repeat</div>
+            </div>
+          </label>
         </div>
       </div>
+
     </div>
 
-    <!-- ── Right: Output ───────────────────────────────────── -->
+    <!-- ── RIGHT: output ─────────────────────────────────── -->
     <div class="output-col" id="output-col">
 
-      <!-- Placeholder -->
+      <!-- Placeholder (replaced by JS on upload) -->
       <div class="output-card" id="placeholder-card">
         <div class="placeholder-state">
-          <div class="placeholder-icon">✨</div>
-          <div class="placeholder-title">Ready to convert</div>
-          <div class="placeholder-sub">Upload an SVG file to see your CSS output here</div>
+          <span class="placeholder-icon">◈</span>
+          <div class="placeholder-title">Waiting for SVG</div>
+          <div class="placeholder-sub">Upload a file to see the CSS output here</div>
         </div>
       </div>
+
     </div>
   </div>
 
-  <footer>
-    <p>All processing happens locally in your browser — your SVG never leaves your device.</p>
-    <p style="margin-top:10px;">Made with ♥ &nbsp;·&nbsp; <a href="https://ko-fi.com/exomethu" target="_blank" rel="noopener noreferrer" class="kofi-footer">☕ Buy me a coffee</a></p>
-  </footer>
+</div><!-- /wrap -->
 
-</div>
+<!-- ══ FOOTER ═════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-brand">SVG→CSS</span>
+    <span class="footer-note">All processing is local — your SVG never leaves your device.</span>
+    <a href="https://ko-fi.com/exomethu" target="_blank" rel="noopener noreferrer" class="footer-kofi">☕ Buy me a coffee</a>
+  </div>
+</footer>
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
    SVG → CSS Converter — Pure JavaScript
+   Logic unchanged; palette-related inline styles updated.
 ═══════════════════════════════════════════════════════════════ */
 
-// ── DOM refs ────────────────────────────────────────────────────
+// ── DOM refs ──────────────────────────────────────────────────
 const dropZone        = document.getElementById('drop-zone');
 const fileInput       = document.getElementById('file-input');
 const btnBrowse       = document.getElementById('btn-browse');
@@ -828,33 +924,35 @@ const svgPreviewImg   = document.getElementById('svg-preview');
 const svgPreviewLight = document.getElementById('svg-preview-light');
 const svgMeta         = document.getElementById('svg-meta');
 const outputCol       = document.getElementById('output-col');
-const placeholderCard = document.getElementById('placeholder-card');
 const optionsCard     = document.getElementById('options-card');
 const dropIcon        = document.getElementById('drop-icon');
 
-// Option checkboxes
-const optMinify       = document.getElementById('opt-minify');
-const optRemoveAttrs  = document.getElementById('opt-remove-attrs');
-const optBgSize       = document.getElementById('opt-bg-size');
-const optNoRepeat     = document.getElementById('opt-no-repeat');
+const optMinify      = document.getElementById('opt-minify');
+const optRemoveAttrs = document.getElementById('opt-remove-attrs');
+const optBgSize      = document.getElementById('opt-bg-size');
+const optNoRepeat    = document.getElementById('opt-no-repeat');
 
 let currentSvgSource = null;
 let currentFileName  = '';
 
-// ── Event wiring ────────────────────────────────────────────────
+// ── Events ────────────────────────────────────────────────────
 btnBrowse.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+dropZone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+});
 
 fileInput.addEventListener('change', e => {
   const file = e.target.files[0];
   if (file) handleFile(file);
-  fileInput.value = '';        // reset so same file can be re-uploaded
+  fileInput.value = '';
 });
 
 dropZone.addEventListener('dragenter', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over'); });
+dropZone.addEventListener('dragleave', e => {
+  if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('drag-over');
+});
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
@@ -866,12 +964,11 @@ dropZone.addEventListener('drop', e => {
   }
 });
 
-// Re-convert when options change
 [optMinify, optRemoveAttrs, optBgSize, optNoRepeat].forEach(opt =>
   opt.addEventListener('change', () => { if (currentSvgSource) renderOutput(currentSvgSource); })
 );
 
-// ── File handler ────────────────────────────────────────────────
+// ── File handler ──────────────────────────────────────────────
 function handleFile(file) {
   if (!file.type.includes('svg') && !file.name.toLowerCase().endsWith('.svg')) {
     showError('Please upload a valid SVG file.'); return;
@@ -888,23 +985,21 @@ function handleFile(file) {
   reader.readAsText(file);
 }
 
-// ── SVG Preview + Meta ──────────────────────────────────────────
+// ── Preview + meta ────────────────────────────────────────────
 function showPreview(svgText, file) {
-  dropIcon.textContent = '✅';
+  dropIcon.textContent = '✔';
   const blob = new Blob([svgText], { type: 'image/svg+xml' });
   const url  = URL.createObjectURL(blob);
   svgPreviewImg.src   = url;
   svgPreviewLight.src = url;
   svgPreviewImg.onload = () => URL.revokeObjectURL(url);
-
   svgPreviewArea.style.display = 'block';
 
-  // Parse dimensions
   const parser = new DOMParser();
   const doc    = parser.parseFromString(svgText, 'image/svg+xml');
   const svgEl  = doc.querySelector('svg');
-  const w  = svgEl?.getAttribute('width')   || svgEl?.viewBox?.baseVal?.width  || '—';
-  const h  = svgEl?.getAttribute('height')  || svgEl?.viewBox?.baseVal?.height || '—';
+  const w  = svgEl?.getAttribute('width')  || svgEl?.viewBox?.baseVal?.width  || '—';
+  const h  = svgEl?.getAttribute('height') || svgEl?.viewBox?.baseVal?.height || '—';
   const vb = svgEl?.getAttribute('viewBox') || '—';
 
   const rawSize  = file.size;
@@ -913,73 +1008,57 @@ function showPreview(svgText, file) {
 
   svgMeta.innerHTML = `
     <div class="meta-row"><span class="meta-key">File</span><span class="meta-val">${escapeHtml(file.name)}</span></div>
-    <div class="meta-row"><span class="meta-key">Size</span><span class="meta-val ${sizeGood?'good':'warn'}">${sizeStr}${sizeGood?''?' ⚠':''}</span></div>
-    <div class="meta-row"><span class="meta-key">Dimensions</span><span class="meta-val">${w} × ${h}</span></div>
+    <div class="meta-row"><span class="meta-key">Size</span><span class="meta-val ${sizeGood?'good':'warn'}">${sizeStr}</span></div>
+    <div class="meta-row"><span class="meta-key">Width</span><span class="meta-val">${w}</span></div>
+    <div class="meta-row"><span class="meta-key">Height</span><span class="meta-val">${h}</span></div>
     <div class="meta-row"><span class="meta-key">ViewBox</span><span class="meta-val">${escapeHtml(vb)}</span></div>
   `;
 }
 
-// ── SVG Optimization ────────────────────────────────────────────
+// ── SVG optimization ──────────────────────────────────────────
 function optimizeSvg(raw) {
   let svg = raw;
-
-  // Remove XML declaration
   svg = svg.replace(/<\?xml[^>]*\?>/gi, '');
-
-  // Remove DOCTYPE
   svg = svg.replace(/<!DOCTYPE[^>]*>/gi, '');
-
   if (optMinify.checked) {
-    // Remove comments
     svg = svg.replace(/<!--[\s\S]*?-->/g, '');
-    // Collapse whitespace between tags
     svg = svg.replace(/>\s+</g, '><');
-    // Trim
     svg = svg.trim();
-    // Collapse internal whitespace runs (not inside attribute values)
     svg = svg.replace(/\s{2,}/g, ' ');
   }
-
   if (optRemoveAttrs.checked) {
     svg = svg.replace(/\s*xml:space="[^"]*"/g, '');
     svg = svg.replace(/\s*version="[^"]*"/g, '');
     svg = svg.replace(/\s*xmlns:xlink="[^"]*"/g, '');
-    // Remove empty style attributes
     svg = svg.replace(/\s*style=""/g, '');
   }
-
   return svg.trim();
 }
 
-// ── URL encoding for SVG ─────────────────────────────────────────
-// RFC 3986 — encode everything except safe chars; keep = and & for readability
+// ── URL encoding ──────────────────────────────────────────────
 function encodeSvgForUrl(svg) {
-  // Characters safe to leave unencoded in a data URI
-  // (browsers also accept # unencoded inside a data URI content)
   return svg
-    .replace(/%/g,  '%25')   // must be first
+    .replace(/%/g,  '%25')
     .replace(/</g,  '%3C')
     .replace(/>/g,  '%3E')
-    .replace(/"/g,  "'")     // replace double quotes with single (shorter + safe)
+    .replace(/"/g,  "'")
     .replace(/\n/g, '%0A')
     .replace(/#/g,  '%23')
     .replace(/\{/g, '%7B')
     .replace(/\}/g, '%7D');
 }
 
-// ── Base64 encoding ──────────────────────────────────────────────
+// ── Base64 encoding ───────────────────────────────────────────
 function toBase64(svg) {
-  // btoa works on ASCII — encode utf-8 first
   const bytes = new TextEncoder().encode(svg);
   let binary = '';
   bytes.forEach(b => binary += String.fromCharCode(b));
   return btoa(binary);
 }
 
-// ── Build CSS property string ────────────────────────────────────
+// ── CSS block builder ─────────────────────────────────────────
 function buildCssBlock(prop, value, extras = []) {
-  const lines = [`${prop}: ${value};`, ...extras];
-  return lines.join('\n');
+  return [`${prop}: ${value};`, ...extras].join('\n');
 }
 
 function extraLines() {
@@ -989,17 +1068,15 @@ function extraLines() {
   return ex;
 }
 
-// ── Byte size helper ─────────────────────────────────────────────
+// ── Byte formatter ────────────────────────────────────────────
 function fmtBytes(n) {
   if (n < 1024) return `${n} B`;
-  if (n < 1024*1024) return `${(n/1024).toFixed(1)} KB`;
-  return `${(n/(1024*1024)).toFixed(2)} MB`;
+  if (n < 1048576) return `${(n/1024).toFixed(1)} KB`;
+  return `${(n/1048576).toFixed(2)} MB`;
 }
 
-// ── Syntax highlighter ───────────────────────────────────────────
+// ── Syntax highlighter ────────────────────────────────────────
 function highlight(cssText) {
-  // Tokenise a CSS rule block into colored spans
-  // We'll do simple regex-based highlighting
   return cssText
     .replace(/^([\w-]+)(:)/gm, '<span class="tok-prop">$1</span><span class="tok-colon">$2</span>')
     .replace(/(url\()/g, '<span class="tok-url">$1</span>')
@@ -1011,47 +1088,48 @@ function highlight(cssText) {
     .replace(/(cover|no-repeat|contain|center)/g, '<span class="tok-size">$1</span>');
 }
 
-// ── Render all output cards ──────────────────────────────────────
+// ── Render all output cards ───────────────────────────────────
 function renderOutput(raw) {
-  const svg     = optimizeSvg(raw);
-  const urlEnc  = encodeSvgForUrl(svg);
-  const b64     = toBase64(svg);
-  const extras  = extraLines();
+  const svg    = optimizeSvg(raw);
+  const urlEnc = encodeSvgForUrl(svg);
+  const b64    = toBase64(svg);
+  const extras = extraLines();
 
   const urlValue  = `url("data:image/svg+xml,${urlEnc}")`;
   const b64Value  = `url("data:image/svg+xml;base64,${b64}")`;
   const maskValue = `url("data:image/svg+xml,${urlEnc}")`;
   const imgTag    = `<img src="data:image/svg+xml,${urlEnc}" width="24" height="24" alt="icon" />`;
 
-  const urlBlock   = buildCssBlock('background-image', urlValue, extras);
-  const b64Block   = buildCssBlock('background-image', b64Value, extras);
-  const maskBlock  = buildCssBlock('mask-image', maskValue, [
+  const urlBlock  = buildCssBlock('background-image', urlValue, extras);
+  const b64Block  = buildCssBlock('background-image', b64Value, extras);
+  const maskBlock = buildCssBlock('mask-image', maskValue, [
     '-webkit-mask-image: ' + maskValue + ';',
     'mask-size: cover;',
     '-webkit-mask-size: cover;',
   ]);
 
-  const urlSize  = fmtBytes(new TextEncoder().encode(urlValue).length);
-  const b64Size  = fmtBytes(new TextEncoder().encode(b64Value).length);
+  const urlSize = fmtBytes(new TextEncoder().encode(urlValue).length);
+  const b64Size = fmtBytes(new TextEncoder().encode(b64Value).length);
 
-  // Clear output except placeholder
   outputCol.innerHTML = '';
 
-  // Big size warning
+  // Large SVG warning
   const svgBytes = new TextEncoder().encode(svg).length;
   if (svgBytes > 10000) {
     const warn = document.createElement('div');
     warn.className = 'output-card animate-in';
-    warn.style.cssText = 'background:rgba(245,158,11,0.06); border-color:rgba(245,158,11,0.25);';
-    warn.innerHTML = `<div style="padding:14px 18px; display:flex; gap:12px; align-items:flex-start; font-size:13px; color:#fbbf24; line-height:1.5;">
-      <span style="font-size:18px; flex-shrink:0;">⚠️</span>
-      <div><strong>Large SVG detected (${fmtBytes(svgBytes)})</strong><br>
-      Embedding large SVGs in CSS can bloat your stylesheets. Consider using an external <code style="font-family:monospace; background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:4px;">&lt;img&gt;</code> tag or an icon font instead.</div>
+    warn.style.cssText = 'background:#F8EAE7; border-color:#C8321A;';
+    warn.innerHTML = `<div style="padding:14px 16px; display:flex; gap:11px; align-items:flex-start; font-size:0.8rem; color:#C8321A; line-height:1.55; font-family:'DM Sans',sans-serif;">
+      <span style="font-size:1rem; flex-shrink:0; font-weight:700;">⚠</span>
+      <div><strong>Large SVG (${fmtBytes(svgBytes)})</strong> — Embedding large SVGs in CSS can bloat your stylesheets. Consider an external <code style="font-family:'JetBrains Mono',monospace; background:rgba(200,50,26,0.12); padding:1px 5px;">&lt;img&gt;</code> tag instead.</div>
     </div>`;
     outputCol.appendChild(warn);
   }
 
-  // ── Card builder helper
+  // Copy button SVG icon
+  const copyIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  const checkIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
   function addCard(badgeClass, badgeText, metaText, cssCode, copyText, id) {
     const card = document.createElement('div');
     card.className = 'output-card animate-in';
@@ -1062,10 +1140,7 @@ function renderOutput(raw) {
           <span class="output-type-badge ${badgeClass}">${badgeText}</span>
           <span class="output-meta-badge">${metaText}</span>
         </div>
-        <button class="btn-copy" data-copy="${escapeAttr(copyText)}" title="Copy to clipboard">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy
-        </button>
+        <button class="btn-copy" data-copy="${escapeAttr(copyText)}">${copyIcon} Copy</button>
       </div>
       <div class="code-block">
         <pre>${highlight(escapeHtml(cssCode))}</pre>
@@ -1074,11 +1149,11 @@ function renderOutput(raw) {
     outputCol.appendChild(card);
   }
 
-  addCard('badge-url',  'URL-encoded', `${urlSize} • Recommended`,      urlBlock,   urlBlock,   'card-url');
-  addCard('badge-b64',  'Base64',      `${b64Size} • Wider compat`,      b64Block,   b64Block,   'card-b64');
-  addCard('badge-mask', 'Mask image',  'For icon masks / colorizing',   maskBlock,  maskBlock,  'card-mask');
+  addCard('badge-url',  'URL-encoded', `${urlSize} · Recommended`, urlBlock,  urlBlock,  'card-url');
+  addCard('badge-b64',  'Base64',      `${b64Size} · Wider compat`, b64Block,  b64Block,  'card-b64');
+  addCard('badge-mask', 'Mask',        'For icon masking',          maskBlock, maskBlock, 'card-mask');
 
-  // ── <img> inline tag
+  // Inline <img> card
   const imgCard = document.createElement('div');
   imgCard.className = 'output-card animate-in';
   imgCard.id = 'card-img';
@@ -1088,10 +1163,7 @@ function renderOutput(raw) {
         <span class="output-type-badge badge-img">Inline &lt;img&gt;</span>
         <span class="output-meta-badge">HTML snippet</span>
       </div>
-      <button class="btn-copy" data-copy="${escapeAttr(imgTag)}" title="Copy to clipboard">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Copy
-      </button>
+      <button class="btn-copy" data-copy="${escapeAttr(imgTag)}">${copyIcon} Copy</button>
     </div>
     <div class="code-block">
       <pre>${highlight(escapeHtml(imgTag))}</pre>
@@ -1099,64 +1171,61 @@ function renderOutput(raw) {
   `;
   outputCol.appendChild(imgCard);
 
-  // ── Background preview card
+  // Background preview card
   const bgCard = document.createElement('div');
   bgCard.className = 'output-card animate-in';
   bgCard.id = 'card-bg-preview';
   bgCard.innerHTML = `
     <div class="output-header">
       <div class="output-label">
-        <span class="output-type-badge" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">🎨 Background Preview</span>
+        <span class="output-type-badge" style="background:rgba(255,255,255,0.12); color:#aaa; border:1px solid #333;">BG Preview</span>
         <span class="output-meta-badge">Live render</span>
       </div>
     </div>
     <div class="bg-preview-grid">
-      <div class="bg-swatch" id="swatch-dark"  style="background:#0c0d14;"></div>
-      <div class="bg-swatch" id="swatch-mid"   style="background:#374151;"></div>
-      <div class="bg-swatch" id="swatch-light" style="background:#f8fafc;"></div>
+      <div class="bg-swatch" id="swatch-dark"  style="background:#111111;"></div>
+      <div class="bg-swatch" id="swatch-mid"   style="background:#525252;"></div>
+      <div class="bg-swatch" id="swatch-light" style="background:#F8F6F1;"></div>
     </div>
   `;
   outputCol.appendChild(bgCard);
 
-  // Apply background to swatches
+  // Apply SVG as background to swatches
   ['swatch-dark','swatch-mid','swatch-light'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.style.backgroundImage  = urlValue;
-      el.style.backgroundSize   = 'cover';
-      el.style.backgroundRepeat = 'no-repeat';
+      el.style.backgroundImage    = urlValue;
+      el.style.backgroundSize     = 'cover';
+      el.style.backgroundRepeat   = 'no-repeat';
       el.style.backgroundPosition = 'center';
     }
   });
 
-  // Add labels to swatches
-  ['swatch-dark','swatch-mid','swatch-light'].forEach((id, i) => {
+  // Add swatch labels
+  [['swatch-dark','Dark'],['swatch-mid','Gray'],['swatch-light','Light']].forEach(([id, label]) => {
     const el = document.getElementById(id);
     if (el) {
-      const labels = ['Dark bg','Gray bg','Light bg'];
       const lbl = document.createElement('div');
       lbl.className = 'bg-swatch-label';
-      lbl.textContent = labels[i];
+      lbl.textContent = label;
       el.appendChild(lbl);
     }
   });
 
   // Wire copy buttons
   outputCol.querySelectorAll('.btn-copy').forEach(btn => {
-    btn.addEventListener('click', () => copyToClipboard(btn.dataset.copy, btn));
+    btn.addEventListener('click', () => copyToClipboard(btn.dataset.copy, btn, copyIcon, checkIcon));
   });
 }
 
-// ── Clipboard ────────────────────────────────────────────────────
-async function copyToClipboard(text, btn) {
+// ── Clipboard ─────────────────────────────────────────────────
+async function copyToClipboard(text, btn, copyIcon, checkIcon) {
   try {
     await navigator.clipboard.writeText(text);
-    const orig = btn.innerHTML;
     btn.classList.add('copied');
-    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+    btn.innerHTML = `${checkIcon} Copied!`;
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `${copyIcon} Copy`; }, 2000);
   } catch(err) {
-    // fallback
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.style.cssText = 'position:fixed;opacity:0;';
@@ -1165,25 +1234,23 @@ async function copyToClipboard(text, btn) {
     document.execCommand('copy');
     document.body.removeChild(ta);
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 2000);
+    setTimeout(() => btn.innerHTML = `${copyIcon} Copy`, 2000);
   }
 }
 
-// ── Error display ────────────────────────────────────────────────
+// ── Error toast ───────────────────────────────────────────────
 function showError(msg) {
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-    background:#ef4444; color:#fff; padding:10px 20px; border-radius:10px;
-    font-size:13px; font-weight:600; box-shadow:0 4px 24px rgba(239,68,68,0.4);
-    z-index:9999; animation: fadeInUp .3s ease both;
-  `;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3500);
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#C8321A;color:#fff;padding:10px 20px;border:1.5px solid #111;
+    font-size:0.8rem;font-weight:700;font-family:'DM Sans',sans-serif;
+    box-shadow:3px 3px 0 #111;z-index:9999;letter-spacing:0.02em;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
 }
 
-// ── Escape helpers ───────────────────────────────────────────────
+// ── Escape helpers ────────────────────────────────────────────
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -1194,7 +1261,7 @@ function escapeAttr(s) {
   return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Paste support — paste SVG text directly
+// ── Paste support ─────────────────────────────────────────────
 document.addEventListener('paste', e => {
   const text = e.clipboardData?.getData('text/plain') || '';
   if (text.trim().startsWith('<svg') || text.trim().includes('<svg ')) {
